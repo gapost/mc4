@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include "mc4.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class Widget;
@@ -17,7 +19,17 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
+protected slots:
+
+    void onGoPos();
+    void onReadPos();
+    void onReadStat();
+    void onReset();
+
 private:
+    mc4 M;
     Ui::Widget *ui;
+
+    char getAxis();
 };
 #endif // WIDGET_H

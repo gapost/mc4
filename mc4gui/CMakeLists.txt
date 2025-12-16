@@ -10,14 +10,16 @@ set(PROJECT_SOURCES
         widget.cpp
         widget.h
         widget.ui
+        ../mc4/mc4.h
+        ../mc4/mc4.cpp
 )
 
 add_executable(mc4gui
             ${PROJECT_SOURCES}
         )
 
-
-target_link_libraries(mc4gui PRIVATE Qt5::Widgets)
+target_include_directories(mc4gui PRIVATE ${CMAKE_SOURCE_DIR}/mc4)
+target_link_libraries(mc4gui PRIVATE Qt5::Widgets gpib)
 
 include(GNUInstallDirs)
 install(TARGETS mc4gui
