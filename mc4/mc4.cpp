@@ -132,7 +132,7 @@ int mc4::get_position(char axis, int &pos)
 
 int mc4::reset_position(char axis)
 {
-    std::string cmd("D"), resp;
+    std::string cmd("A"), resp;
     cmd += static_cast<char>(std::toupper(static_cast<unsigned char>(axis)));
     int ret = write(cmd);
 }
