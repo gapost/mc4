@@ -6,7 +6,6 @@
 
 class mc4
 {
-    std::vector<char> buff_;
     std::string error_msg_;
     int addr_;
     int dev_;
@@ -25,7 +24,7 @@ public:
     int set_position(char axis, int pos);
     int get_position(char axis, int &pos);
     int reset_position(char axis);
-    int get_status(char axis, char &status);
+    int get_status(char moving[4], char limitup[4], char limitdwn[4], int pos[4]);
 };
 
 #endif // MC4_H

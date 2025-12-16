@@ -54,8 +54,7 @@ int mc4::check_error()
 }
 
 mc4::mc4()
-    : buff_(128, 0)
-    , addr_(-1)
+    : addr_(-1)
     , dev_(-1)
 {}
 
@@ -127,14 +126,112 @@ int mc4::get_position(char axis, int &pos)
     is.get(a);
     is.get(a);
     is >> pos;
-    return is.fail() ? -1 : 0;
+    if (is.fail()) {
+        error_msg_ = "Invalid mc4 response to ";
+        error_msg_ += cmd;
+        return -1;
+    }
+    return 0;
 }
 
 int mc4::reset_position(char axis)
 {
     std::string cmd("A"), resp;
     cmd += static_cast<char>(std::toupper(static_cast<unsigned char>(axis)));
-    int ret = write(cmd);
+    return write(cmd);
 }
 
-int mc4::get_status(char axis, char &status) {}
+int mc4::get_status(char moving[], char limitup[], char limitdwn[], int pos[])
+{
+    // setup query - FSFF = get all info
+    int ret = write("FSFF");
+    if (ret != 0)
+        return ret;
+
+    // query status
+    ret = write("?");
+    if (ret != 0)
+        return ret;
+
+    // get response
+    std::string resp;
+    ret = read(resp);
+    if (ret != 0)
+        return ret;
+
+    // write again to remove mc4 error state after read
+    write("FSFF");
+
+    // parse repsponse
+    std::istringstream is(resp);
+    char b;
+
+    // byte 0
+    is.get(b);
+    if (b == '4') { // wait state
+        is.get(b);  // get the wait status
+        // do nothing
+        is.get(b); // get next header byte
+    }
+    if (b == '0') {
+        is.get(b); // get the 0th status byte
+        moving[0] = b & 1;
+        moving[1] = b & 2;
+        moving[2] = b & 4;
+        moving[3] = b & 8;
+    } else {
+        error_msg_ = "Invalid mc4 response";
+        return -1;
+    }
+
+    // byte 1
+    is.get(b);
+    if (b == '1') {
+        is.get(b); // get the 1st status byte
+        limitup[0] = b & 1;
+        limitdwn[0] = b & 2;
+        limitup[1] = b & 4;
+        limitdwn[1] = b & 8;
+    } else {
+        error_msg_ = "Invalid mc4 response";
+        return -1;
+    }
+
+    // byte 2
+    is.get(b);
+    if (b == '2') {
+        is.get(b); // get the 1st status byte
+        limitup[2] = b & 1;
+        limitdwn[2] = b & 2;
+        limitup[3] = b & 4;
+        limitdwn[3] = b & 8;
+    } else {
+        error_msg_ = "Invalid mc4 response";
+        return -1;
+    }
+
+    // byte 3
+    is.get(b);
+    if (b == '3') {
+        is.get(b); // get the 3rd status byte
+        // do nothing
+    } else {
+        error_msg_ = "Invalid mc4 response";
+        return -1;
+    }
+
+    int k = 0;
+    while (k < 4 && is.good()) {
+        std::string tok;
+        is >> tok; // "W="
+        is >> pos[k];
+        k++;
+    }
+
+    if (is.fail()) {
+        error_msg_ = "Invalid mc4 response";
+        return -1;
+    }
+
+    return 0;
+}
